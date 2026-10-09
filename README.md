@@ -40,6 +40,10 @@ function doPost(e) {
     addLead(data);
     return ContentService.createTextOutput(JSON.stringify({success: true}))
       .setMimeType(ContentService.MimeType.JSON);
+  } else if(action == 'updateLead') {
+    updateLead(data);
+    return ContentService.createTextOutput(JSON.stringify({success: true}))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
@@ -56,8 +60,7 @@ function getCurrentMonthSheet() {
   if (!sheet) {
     sheet = ss.insertSheet(sheetName);
     // Add headers to the new sheet
-    sheet.appendRow(['ID', 'Name', 'Phone', 'Email', 'Source', 'Status', 'FollowUp', 'Notes', 'DateAdded']);
-    // You can add logic here to copy pending leads from the previous month if needed.
+    sheet.appendRow(['ID', 'Name', 'Phone', 'Email', 'City', 'Course', 'Agent', 'Source', 'Status', 'FollowUp', 'Notes', 'History', 'Remarks', 'DateAdded']);
   }
   return sheet;
 }
@@ -74,10 +77,15 @@ function getLeads() {
       name: data[i][1],
       phone: data[i][2],
       email: data[i][3],
-      source: data[i][4],
-      status: data[i][5],
-      followUp: data[i][6],
-      notes: data[i][7]
+      city: data[i][4],
+      course: data[i][5],
+      agent: data[i][6],
+      source: data[i][7],
+      status: data[i][8],
+      followUp: data[i][9],
+      notes: data[i][10],
+      history: data[i][11] ? JSON.parse(data[i][11]) : [],
+      remarks: data[i][12] ? JSON.parse(data[i][12]) : []
     });
   }
   return leads.reverse(); // Newest first
@@ -90,12 +98,31 @@ function addLead(lead) {
     lead.name,
     lead.phone,
     lead.email,
+    lead.city,
+    lead.course,
+    lead.agent,
     lead.source,
     lead.status,
     lead.followUp,
     lead.notes,
+    JSON.stringify(lead.history || []),
+    JSON.stringify(lead.remarks || []),
     new Date().toISOString()
   ]);
+}
+
+function updateLead(lead) {
+  var sheet = getCurrentMonthSheet();
+  var data = sheet.getDataRange().getValues();
+  
+  for(var i = 1; i < data.length; i++) {
+    if(data[i][0] == lead.id) {
+      sheet.getRange(i+1, 1, 1, 14).setValues([[
+        lead.id, lead.name, lead.phone, lead.email, lead.city, lead.course, lead.agent, lead.source, lead.status, lead.followUp, lead.notes, JSON.stringify(lead.history || []), JSON.stringify(lead.remarks || []), data[i][13]
+      ]]);
+      break;
+    }
+  }
 }
 ```
 

@@ -5,7 +5,7 @@ let currentCallSeconds = 0;
 let currentActiveLead = null;
 
 // Google Apps Script Web App URL (Placeholder - to be replaced by the user)
-const GOOGLE_SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbwxivtKCSObO-eQbMtig4Bjj_JCcIhM9Lcfk5jfYE6-dEgY6TXRMtY8YUSz2c31Z8tDZA/exec";
+const GOOGLE_SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbwtcIJ6FVgcBPyvhZDjPs8mkSJyLu7rNEKZRIf456sqb4A4mtl27uzf7z3rInE2KFMQrg/exec";
 
 // DOM Elements
 const tbody = document.getElementById('leadsTableBody');
@@ -223,17 +223,26 @@ addLeadForm.addEventListener('submit', async (e) => {
         remarks: document.getElementById('leadNotes').value ? [{type: 'remark', date: new Date().toLocaleString(), text: document.getElementById('leadNotes').value}] : []
     };
 
-    // Simulate API Call to Google Sheets
-    setTimeout(() => {
+    // Actual API Call to Google Sheets
+    try {
+        await fetch(GOOGLE_SHEETS_API_URL + "?action=addLead", {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(newLead)
+        });
         leads.unshift(newLead);
         renderLeads();
         updateStats();
         closeAddLeadModal();
         addLeadForm.reset();
+        showToast("Lead successfully added to Google Sheets!");
+    } catch(err) {
+        showToast("Error saving lead");
+    } finally {
         btn.innerHTML = 'Save to Sheets';
         btn.disabled = false;
-        showToast("Lead successfully added to Google Sheets!");
-    }, 1000);
+    }
 });
 
 // Modals
@@ -308,8 +317,12 @@ function renderTimeline(lead) {
     `).join('');
 }
 
-document.getElementById('addRemarkForm').addEventListener('submit', (e) => {
+document.getElementById('addRemarkForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.innerHTML = 'Saving...';
+    btn.disabled = true;
+
     const text = document.getElementById('remarkText').value;
     if(!currentActiveLead.remarks) currentActiveLead.remarks = [];
     
@@ -319,9 +332,22 @@ document.getElementById('addRemarkForm').addEventListener('submit', (e) => {
         text: text
     });
     
-    document.getElementById('remarkText').value = '';
-    renderTimeline(currentActiveLead);
-    showToast("Remark added successfully!");
+    try {
+        await fetch(GOOGLE_SHEETS_API_URL + "?action=updateLead", {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(currentActiveLead)
+        });
+        document.getElementById('remarkText').value = '';
+        renderTimeline(currentActiveLead);
+        showToast("Remark added successfully!");
+    } catch(err) {
+        showToast("Error saving remark");
+    } finally {
+        btn.innerHTML = 'Save Remark';
+        btn.disabled = false;
+    }
 });
 
 // Calling Logic
@@ -344,15 +370,20 @@ document.getElementById('endCallBtn').addEventListener('click', () => {
     document.getElementById('callOutcomeSection').style.display = 'block';
 });
 
-document.getElementById('callOutcomeForm').addEventListener('submit', (e) => {
+document.getElementById('callOutcomeForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.innerHTML = 'Saving...';
+    btn.disabled = true;
+
     const outcome = document.getElementById('activityType').value;
     if(!outcome) {
         showToast("Please select an activity first");
+        btn.innerHTML = 'Save Outcome';
+        btn.disabled = false;
         return;
     }
     
-    // Update Lead Status locally
     if(currentActiveLead) {
         if(!currentActiveLead.history) currentActiveLead.history = [];
         currentActiveLead.history.unshift({
@@ -368,12 +399,24 @@ document.getElementById('callOutcomeForm').addEventListener('submit', (e) => {
         else if(outcome === 'Counseling/Visit Done' || outcome === 'Interested in Course') currentActiveLead.status = 'level_4';
         else if(outcome === 'Admission Done') currentActiveLead.status = 'level_done';
         
-        renderLeads();
-        updateStats();
+        try {
+            await fetch(GOOGLE_SHEETS_API_URL + "?action=updateLead", {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(currentActiveLead)
+            });
+            renderLeads();
+            updateStats();
+            showToast(`Activity Logged: ${outcome}`);
+            closeCallModal();
+        } catch(err) {
+            showToast("Error saving activity");
+        } finally {
+            btn.innerHTML = 'Save Outcome';
+            btn.disabled = false;
+        }
     }
-    
-    closeCallModal();
-    showToast(`Activity Logged: ${outcome}`);
 });
 
 // CSV Export
