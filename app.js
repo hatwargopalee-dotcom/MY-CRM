@@ -13,6 +13,7 @@ const addLeadModal = document.getElementById('addLeadModal');
 const callModal = document.getElementById('callModal');
 const addLeadForm = document.getElementById('addLeadForm');
 const statusFilter = document.getElementById('statusFilter');
+const globalSearchInput = document.getElementById('globalSearchInput');
 
 // Dummy Data to show UI capabilities before Google Sheets is connected
 const dummyData = [
@@ -75,7 +76,16 @@ async function fetchLeads() {
 // Render Leads Table
 function renderLeads() {
     const filterValue = statusFilter.value;
-    const filteredLeads = filterValue === 'all' ? leads : leads.filter(l => l.status === filterValue);
+    const searchQuery = globalSearchInput.value.toLowerCase().trim();
+    
+    const filteredLeads = leads.filter(lead => {
+        if (filterValue !== 'all' && lead.status !== filterValue) return false;
+        if (searchQuery) {
+            const searchStr = `${lead.name} ${lead.phone} ${lead.email || ''}`.toLowerCase();
+            if (!searchStr.includes(searchQuery)) return false;
+        }
+        return true;
+    });
     
     tbody.innerHTML = '';
     
@@ -189,6 +199,7 @@ function updateStats() {
 
 // Event Listeners
 statusFilter.addEventListener('change', renderLeads);
+globalSearchInput.addEventListener('input', renderLeads);
 
 addLeadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
