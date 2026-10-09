@@ -5,7 +5,7 @@ let currentCallSeconds = 0;
 let currentActiveLead = null;
 
 // Google Apps Script Web App URL (Placeholder - to be replaced by the user)
-const GOOGLE_SHEETS_API_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL";
+const GOOGLE_SHEETS_API_URL = https://script.google.com/macros/s/AKfycbwxivtKCSObO-eQbMtig4Bjj_JCcIhM9Lcfk5jfYE6-dEgY6TXRMtY8YUSz2c31Z8tDZA/exec;
 
 // DOM Elements
 const tbody = document.getElementById('leadsTableBody');
@@ -16,10 +16,10 @@ const statusFilter = document.getElementById('statusFilter');
 
 // Dummy Data to show UI capabilities before Google Sheets is connected
 const dummyData = [
-    { id: 1, name: "Alice Johnson", phone: "+1 415 555 1001", email: "alice@example.com", source: "Website", status: "level_basic", followUp: "Today", company: "TechCorp", history: [], remarks: [] },
-    { id: 2, name: "Michael Smith", phone: "+1 415 555 1002", email: "mike@example.com", source: "Referral", status: "level_1", followUp: "Tomorrow", company: "Retail Inc", history: [{type: 'activity', date: new Date().toLocaleString(), text: 'Logged Activity: Followup Required'}], remarks: [] },
-    { id: 3, name: "Samantha Lee", phone: "+1 415 555 1003", email: "sam@example.com", source: "Cold Call", status: "level_3", followUp: "10 Oct 2026", company: "Services LLC", history: [{type: 'activity', date: new Date().toLocaleString(), text: 'Logged Activity: Counseling/Visit Booked'}], remarks: [{type: 'remark', date: new Date().toLocaleString(), text: 'Client seems very interested in the weekend batch.'}] },
-    { id: 4, name: "David Chen", phone: "+1 415 555 1004", email: "david@example.com", source: "Social Media", status: "level_done", followUp: "-", company: "Startup AI", history: [], remarks: [] },
+    { id: 1, name: "Alice Johnson", phone: "+1 415 555 1001", email: "alice@example.com", source: "Website", status: "level_basic", followUp: "Today", company: "TechCorp", city: "Pune", course: "Data Science", agent: "John Doe", history: [], remarks: [] },
+    { id: 2, name: "Michael Smith", phone: "+1 415 555 1002", email: "mike@example.com", source: "Referral", status: "level_1", followUp: "Tomorrow", company: "Retail Inc", city: "Mumbai", course: "AI Engineering", agent: "Jane Smith", history: [{type: 'activity', date: new Date().toLocaleString(), text: 'Logged Activity: Followup Required'}], remarks: [] },
+    { id: 3, name: "Samantha Lee", phone: "+1 415 555 1003", email: "sam@example.com", source: "Cold Call", status: "level_3", followUp: "10 Oct 2026", company: "Services LLC", city: "Delhi", course: "Web Dev", agent: "John Doe", history: [{type: 'activity', date: new Date().toLocaleString(), text: 'Logged Activity: Counseling/Visit Booked'}], remarks: [{type: 'remark', date: new Date().toLocaleString(), text: 'Client seems very interested in the weekend batch.'}] },
+    { id: 4, name: "David Chen", phone: "+1 415 555 1004", email: "david@example.com", source: "Social Media", status: "level_done", followUp: "-", company: "Startup AI", city: "Bangalore", course: "Data Science", agent: "Alex V", history: [], remarks: [] },
 ];
 
 // Initialize App
@@ -115,6 +115,44 @@ function renderLeads() {
         `;
         tbody.appendChild(tr);
     });
+    
+    renderOtherViews();
+}
+
+function renderOtherViews() {
+    const tasksBody = document.getElementById('tasksTableBody');
+    const logsBody = document.getElementById('callLogsTableBody');
+    
+    // Tasks: Leads with followUp Today or Tomorrow (or any valid date) that aren't done
+    const tasks = leads.filter(l => l.followUp && l.followUp !== 'Pending' && l.followUp !== '-' && l.status !== 'level_done');
+    tasksBody.innerHTML = tasks.length ? tasks.map(t => `
+        <tr>
+            <td><strong>${t.name}</strong><br><small>${t.course || 'Unknown Course'}</small></td>
+            <td><span class="status-badge status-level_1">${t.followUp}</span></td>
+            <td>${t.phone}</td>
+            <td><button class="btn btn-primary btn-sm" onclick="openCallModal(${t.id})">Call Now</button></td>
+        </tr>
+    `).join('') : `<tr><td colspan="4" class="text-center">No pending tasks!</td></tr>`;
+
+    // Call Logs: Flatten all activity history from all leads
+    const allLogs = [];
+    leads.forEach(l => {
+        if(l.history) {
+            l.history.filter(h => h.type === 'activity').forEach(h => {
+                allLogs.push({ leadName: l.name, agent: l.agent || 'Unknown', date: h.date, text: h.text });
+            });
+        }
+    });
+    
+    allLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+    logsBody.innerHTML = allLogs.length ? allLogs.map(log => `
+        <tr>
+            <td>${log.date}</td>
+            <td><strong>${log.leadName}</strong></td>
+            <td>${log.text.replace('Logged Activity: ', '')}</td>
+            <td>${log.agent}</td>
+        </tr>
+    `).join('') : `<tr><td colspan="4" class="text-center">No call logs yet.</td></tr>`;
 }
 
 // Status Formatting & Styling Helper
@@ -163,6 +201,9 @@ addLeadForm.addEventListener('submit', async (e) => {
         name: document.getElementById('leadName').value,
         phone: document.getElementById('leadPhone').value,
         email: document.getElementById('leadEmail').value,
+        city: document.getElementById('leadCity').value,
+        course: document.getElementById('leadCourse').value,
+        agent: document.getElementById('leadAgent').value,
         source: document.getElementById('leadSource').value,
         status: 'level_basic',
         followUp: 'Pending',
@@ -221,6 +262,9 @@ function openLeadDrawer(leadId) {
     document.getElementById('drawerLeadName').innerText = lead.name;
     document.getElementById('drawerLeadPhone').innerText = lead.phone;
     document.getElementById('drawerLeadEmail').innerText = lead.email || 'N/A';
+    document.getElementById('drawerLeadCity').innerText = lead.city || 'N/A';
+    document.getElementById('drawerLeadCourse').innerText = lead.course || 'N/A';
+    document.getElementById('drawerLeadAgent').innerText = lead.agent || 'Unassigned';
     document.getElementById('drawerLeadStatus').innerText = formatStatus(lead.status);
     
     renderTimeline(lead);
@@ -333,6 +377,9 @@ function exportToCSV() {
         Name: lead.name,
         Phone: lead.phone,
         Email: lead.email || '',
+        City: lead.city || '',
+        Course: lead.course || '',
+        Agent: lead.agent || '',
         Source: lead.source || '',
         Status: formatStatus(lead.status),
         NextFollowUp: lead.followUp || '',
@@ -371,6 +418,9 @@ document.getElementById('csvFileInput').addEventListener('change', function(e) {
                         name: row.Name,
                         phone: row.Phone,
                         email: row.Email || '',
+                        city: row.City || '',
+                        course: row.Course || '',
+                        agent: row.Agent || '',
                         source: row.Source || 'Import',
                         status: 'level_basic',
                         followUp: row.NextFollowUp || 'Pending',
