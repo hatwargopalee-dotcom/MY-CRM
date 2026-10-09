@@ -24,11 +24,11 @@
                 </div>
             </div>
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active"><i class="ph ph-squares-four"></i> Dashboard</a>
-                <a href="#" class="nav-item"><i class="ph ph-users"></i> Manage Leads</a>
-                <a href="#" class="nav-item"><i class="ph ph-phone-call"></i> Call Logs</a>
-                <a href="#" class="nav-item"><i class="ph ph-calendar-check"></i> Tasks</a>
-                <a href="#" class="nav-item"><i class="ph ph-chart-line-up"></i> Reports</a>
+                <a href="#" class="nav-item active" onclick="switchView('view-dashboard', this)"><i class="ph ph-squares-four"></i> Dashboard</a>
+                <a href="#" class="nav-item" onclick="switchView('view-manage-leads', this)"><i class="ph ph-users"></i> Manage Leads</a>
+                <a href="#" class="nav-item" onclick="switchView('view-call-logs', this)"><i class="ph ph-phone-call"></i> Call Logs</a>
+                <a href="#" class="nav-item" onclick="switchView('view-tasks', this)"><i class="ph ph-calendar-check"></i> Tasks</a>
+                <a href="#" class="nav-item" onclick="switchView('view-reports', this)"><i class="ph ph-chart-line-up"></i> Reports</a>
             </nav>
             <div class="sidebar-footer">
                 <a href="#" class="nav-item"><i class="ph ph-gear"></i> Settings</a>
@@ -56,7 +56,7 @@
             </header>
 
             <!-- Dashboard Content -->
-            <div class="page-content">
+            <div id="view-dashboard" class="page-content view-section">
                 <div class="page-header">
                     <div>
                         <h1>Leads Management</h1>
@@ -156,6 +156,24 @@
                         </table>
                     </div>
                 </div>
+            </div>
+
+            <!-- Other Views (Placeholders) -->
+            <div id="view-manage-leads" class="page-content view-section" style="display:none;">
+                <div class="page-header"><h1>Manage Leads</h1></div>
+                <div class="data-section" style="padding: 32px;"><p>Detailed CRM database view will go here.</p></div>
+            </div>
+            <div id="view-call-logs" class="page-content view-section" style="display:none;">
+                <div class="page-header"><h1>Call Logs</h1></div>
+                <div class="data-section" style="padding: 32px;"><p>History of all outbound and inbound calls.</p></div>
+            </div>
+            <div id="view-tasks" class="page-content view-section" style="display:none;">
+                <div class="page-header"><h1>Tasks & Follow-ups</h1></div>
+                <div class="data-section" style="padding: 32px;"><p>Your calendar and scheduled follow-ups.</p></div>
+            </div>
+            <div id="view-reports" class="page-content view-section" style="display:none;">
+                <div class="page-header"><h1>Reports</h1></div>
+                <div class="data-section" style="padding: 32px;"><p>Performance analytics and team conversion rates.</p></div>
             </div>
         </main>
     </div>

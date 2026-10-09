@@ -35,6 +35,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// View Navigation
+function switchView(viewId, element) {
+    document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+    document.getElementById(viewId).style.display = 'block';
+    
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+}
+
 // Fetch Leads from Google Sheets
 async function fetchLeads() {
     tbody.innerHTML = `<tr><td colspan="6" class="text-center"><i class="ph ph-spinner ph-spin"></i> Fetching from Google Sheets...</td></tr>`;
