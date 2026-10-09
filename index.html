@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLOBXT HIVE - CRM</title>
+    <meta name="description" content="GLOBXT HIVE CRM for the Calling Team">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- PapaParse for CSV Import/Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="ph-fill ph-hexagon"></i>
+                    <span>GLOBXT HIVE</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active"><i class="ph ph-squares-four"></i> Dashboard</a>
+                <a href="#" class="nav-item"><i class="ph ph-users"></i> Manage Leads</a>
+                <a href="#" class="nav-item"><i class="ph ph-phone-call"></i> Call Logs</a>
+                <a href="#" class="nav-item"><i class="ph ph-calendar-check"></i> Tasks</a>
+                <a href="#" class="nav-item"><i class="ph ph-chart-line-up"></i> Reports</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" class="nav-item"><i class="ph ph-gear"></i> Settings</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="search-bar">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input type="text" placeholder="Search leads, phone numbers, or email...">
+                </div>
+                <div class="topbar-actions">
+                    <button class="icon-btn"><i class="ph ph-bell"></i><span class="badge">3</span></button>
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Calling+Agent&background=2563eb&color=fff" alt="User">
+                        <div class="user-info">
+                            <span class="user-name">Calling Agent</span>
+                            <span class="user-role">Sales Team</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="page-content">
+                <div class="page-header">
+                    <div>
+                        <h1>Leads Management</h1>
+                        <p>Manage and call your assigned leads for the current month.</p>
+                    </div>
+                    <div class="page-actions">
+                        <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+                        <button class="btn btn-outline" onclick="document.getElementById('csvFileInput').click()">
+                            <i class="ph ph-upload-simple"></i> Import CSV
+                        </button>
+                        <button class="btn btn-outline" onclick="exportToCSV()">
+                            <i class="ph ph-download-simple"></i> Export CSV
+                        </button>
+                        <button class="btn btn-outline" onclick="fetchLeads()">
+                            <i class="ph ph-arrows-clockwise"></i> Sync
+                        </button>
+                        <button class="btn btn-primary" onclick="openAddLeadModal()">
+                            <i class="ph ph-plus"></i> Add New Lead
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563eb;">
+                            <i class="ph ph-users"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Total Leads</h3>
+                            <p class="stat-value" id="stat-total">124</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                            <i class="ph ph-phone-call"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Calls Made</h3>
+                            <p class="stat-value" id="stat-calls">89</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                            <i class="ph ph-clock-countdown"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Follow Ups</h3>
+                            <p class="stat-value" id="stat-followups">12</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+                            <i class="ph ph-check-circle"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Converted</h3>
+                            <p class="stat-value" id="stat-converted">5</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters & Table -->
+                <div class="data-section">
+                    <div class="data-header">
+                        <h2>Recent Leads</h2>
+                        <div class="data-filters">
+                            <select id="statusFilter" class="filter-select">
+                                <option value="all">All Levels</option>
+                                <option value="level_basic">Basic (Not Contacted)</option>
+                                <option value="level_0">Level 0 (Not Picked)</option>
+                                <option value="level_1">Level 1 (Call Back Required)</option>
+                                <option value="level_2">Level 2 (Overview Shared)</option>
+                                <option value="level_3">Level 3 (Ready for Visit)</option>
+                                <option value="level_4">Level 4 (Positive After Visit)</option>
+                                <option value="level_done">Admission Done</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="leads-table">
+                            <thead>
+                                <tr>
+                                    <th>Lead Name</th>
+                                    <th>Contact Info</th>
+                                    <th>Source</th>
+                                    <th>Status</th>
+                                    <th>Next Follow-up</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leadsTableBody">
+                                <!-- Dynamic rows go here -->
+                                <tr><td colspan="6" class="text-center">Loading leads...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Lead Modal -->
+    <div id="addLeadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Lead</h2>
+                <button class="close-btn" onclick="closeAddLeadModal()"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="addLeadForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="leadName" required placeholder="John Doe">
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="leadPhone" required placeholder="+1 234 567 8900">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="leadEmail" placeholder="john@example.com">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Lead Source</label>
+                    <select id="leadSource">
+                        <option value="Website">Website</option>
+                        <option value="Referral">Referral</option>
+                        <option value="Cold Call">Cold Call</option>
+                        <option value="Social Media">Social Media</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Initial Notes</label>
+                    <textarea id="leadNotes" rows="3" placeholder="Enter any relevant notes here..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeAddLeadModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveLeadBtn">Save to Sheets</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Call Action Modal -->
+    <div id="callModal" class="modal">
+        <div class="modal-content call-modal">
+            <div class="modal-header">
+                <h2>Call Action</h2>
+                <button class="close-btn" onclick="closeCallModal()"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="call-info">
+                <div class="pulse-ring">
+                    <img src="https://ui-avatars.com/api/?name=Lead&background=f3f4f6&color=374151" alt="Lead" id="callLeadAvatar">
+                </div>
+                <h3 id="callLeadName">Lead Name</h3>
+                <p id="callLeadPhone">+1 234 567 8900</p>
+                <div class="call-timer" id="callTimer">00:00</div>
+            </div>
+            <div class="call-actions">
+                <button class="btn btn-success" id="startCallBtn"><i class="ph ph-phone"></i> Start Call</button>
+                <button class="btn btn-danger" id="endCallBtn" style="display:none;"><i class="ph ph-phone-disconnect"></i> End Call</button>
+            </div>
+            <div class="call-outcome" id="callOutcomeSection" style="display:none;">
+                <hr>
+                <form id="callOutcomeForm">
+                    <div class="form-group">
+                        <label>Select Activity</label>
+                        <select id="activityType">
+                            <option value="" disabled selected>-- Choose Activity --</option>
+                            <option value="Call Done, Did Not Picked">Call Done, Did Not Picked</option>
+                            <option value="Followup Required">Followup Required</option>
+                            <option value="Program Overview Shared">Program Overview Shared</option>
+                            <option value="Counseling/Visit Booked">Counseling/Visit Booked</option>
+                            <option value="Counseling/Visit Done">Counseling/Visit Done</option>
+                            <option value="Interested in Course">Interested in Course</option>
+                            <option value="Admission Done">Admission Done</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Next Step / Notes</label>
+                        <textarea id="callNotes" rows="3" placeholder="Summarize call and next steps..."></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Save Outcome</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lead Detail Drawer -->
+    <div id="leadDrawerOverlay" class="drawer-overlay" onclick="closeLeadDrawer()"></div>
+    <div id="leadDrawer" class="lead-drawer">
+        <div class="drawer-header">
+            <h2 id="drawerLeadName">Lead Name</h2>
+            <button class="close-btn" onclick="closeLeadDrawer()"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="drawer-content">
+            <div class="drawer-section">
+                <h3>Contact Info</h3>
+                <p class="drawer-contact"><i class="ph ph-phone"></i> <span id="drawerLeadPhone"></span></p>
+                <p class="drawer-contact"><i class="ph ph-envelope-simple"></i> <span id="drawerLeadEmail"></span></p>
+                <p class="drawer-contact"><i class="ph ph-tag"></i> Status: <span id="drawerLeadStatus"></span></p>
+            </div>
+            
+            <div class="drawer-section">
+                <h3>Add Remark</h3>
+                <form id="addRemarkForm">
+                    <textarea id="remarkText" class="remark-input" rows="3" placeholder="Type your remark here..." required></textarea>
+                    <div style="text-align: right; margin-top: 8px;">
+                        <button type="submit" class="btn btn-primary btn-sm">Save Remark</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="drawer-section">
+                <h3>Activity & Remarks History</h3>
+                <div class="timeline" id="drawerTimeline">
+                    <!-- Dynamic timeline items go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
