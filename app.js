@@ -5,7 +5,7 @@ let currentCallSeconds = 0;
 let currentActiveLead = null;
 
 // Google Apps Script Web App URL (Placeholder - to be replaced by the user)
-const GOOGLE_SHEETS_API_URL = https://script.google.com/macros/s/AKfycbwxivtKCSObO-eQbMtig4Bjj_JCcIhM9Lcfk5jfYE6-dEgY6TXRMtY8YUSz2c31Z8tDZA/exec;
+const GOOGLE_SHEETS_API_URL = "https://script.google.com/macros/s/AKfycbwxivtKCSObO-eQbMtig4Bjj_JCcIhM9Lcfk5jfYE6-dEgY6TXRMtY8YUSz2c31Z8tDZA/exec";
 
 // DOM Elements
 const tbody = document.getElementById('leadsTableBody');
